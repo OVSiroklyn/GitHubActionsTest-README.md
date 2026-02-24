@@ -1,0 +1,49 @@
+name: Deploy Website to Apache
+
+# 1. Тригери: push, pull_request та ручний запуск (workflow_dispatch)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    # 2. Використання ранера Ubuntu
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. Завантаження коду репозиторію на ранер
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 4. Встановлення Apache
+      - name: Install Apache
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2
+
+      # 5. Копіювання файлу index.html у директорію Apache
+      # Типовий шлях в Ubuntu: /var/www/html/
+      - name: Copy index.html to Apache webroot
+        run: |
+          sudo cp index.html /var/www/html/index.html
+          # Переконуємось, що права доступу дозволяють читання
+          sudo chmod 644 /var/www/html/index.html
+
+      # 6. Запуск/Перезапуск Apache (зазвичай стартує автоматично)
+      - name: Restart Apache
+        run: sudo systemctl restart apache2
+
+      # 7. Перевірка працездатності за допомогою curl
+      - name: Check website availability
+        run: |
+          # Перевіряємо локальний хост та шукаємо слово "Вітаємо" у відповіді
+          curl -s http://localhost | grep -q "Вітаємо"
+          if [ $? -eq 0 ]; then
+            echo "✅ Сторінка успішно завантажена та працює!"
+          else
+            echo "❌ Помилка: Сторінка не знайдена або текст не збігається."
+            exit 1
+          fi
